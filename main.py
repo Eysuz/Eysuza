@@ -9,10 +9,12 @@ room_occupants = {}  # Foydalanuvchi ID va ularning kirish vaqti
 
 # Botni boshlash
 async def start(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text("Assalomu alaykum! Namoz o'qish xonasiga kirish va chiqish uchun quyidagi buyruqlarni ishlating:\n"
-                                    "/enter - Xonaga kirish\n"
-                                    "/exit - Xonadan chiqish\n"
-                                    "/status - Xona holatini ko'rish")
+    await update.message.reply_text(
+        "Assalomu alaykum! Namoz o'qish xonasiga kirish va chiqish uchun quyidagi buyruqlarni ishlating:\n"
+        "/enter - Xonaga kirish\n"
+        "/exit - Xonadan chiqish\n"
+        "/status - Xona holatini ko'rish"
+    )
 
 # Xona holatini ko'rsatish
 async def status(update: Update, context: CallbackContext) -> None:
@@ -37,7 +39,7 @@ async def enter(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text(f"Siz xonaga kirdingiz. Hozirda {user_name} namoz o‘qiydi.")
         
         # 10 daqiqadan keyin eslatma berish uchun job qo‘shish
-        context.job_queue.run_once(check_exit, when=600, chat_id=user_id, name=str(user_id))
+        context.job_queue.run_once(check_exit, when=600, chat_id=update.message.chat_id, name=str(user_id))
 
 # Xonadan chiqish
 async def exit(update: Update, context: CallbackContext) -> None:
@@ -51,7 +53,8 @@ async def exit(update: Update, context: CallbackContext) -> None:
         room_occupants.pop(user_id, None)  # Foydalanuvchini o‘chirish
 
         # Agar eslatma uchun job mavjud bo‘lsa, uni o‘chirish
-        for job in update.message.bot.job_queue.jobs():
+        current_jobs = context.job_queue.jobs()
+        for job in current_jobs:
             if job.name == str(user_id):
                 job.schedule_removal()
 
