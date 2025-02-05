@@ -1,11 +1,11 @@
 import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Xona holati
 room_status = None  # Xona bo'sh, agar kimdir kirsa, ularning ismi bo'ladi
-room_occupants = {}  # Foydalanuvchi ismlari va kirish vaqti
+room_occupants = {}  # Foydalanuvchi ID va ularning kirish vaqti
 
 # Botni boshlash
 async def start(update: Update, context: CallbackContext) -> None:
@@ -17,45 +17,53 @@ async def start(update: Update, context: CallbackContext) -> None:
 # Xona holatini ko'rsatish
 async def status(update: Update, context: CallbackContext) -> None:
     if room_status:
-        await update.message.reply_text(f"Xona band. Hozirda {room_status} namoz o'qiyapti.")
+        await update.message.reply_text(f"Xona band. Hozirda {room_status} namoz o‘qiyapti.")
     else:
-        await update.message.reply_text("Xona bo'sh. Hozirda hech kim namoz o'qimayapti.")
+        await update.message.reply_text("Xona bo‘sh. Hozirda hech kim namoz o‘qimayapti.")
 
 # Xonaga kirish
 async def enter(update: Update, context: CallbackContext) -> None:
     global room_status, room_occupants
-    
+
     if room_status:
-        await update.message.reply_text(f"Xona band. {room_status} hozir namoz o'qiyapti.")
+        await update.message.reply_text(f"Xona band. {room_status} hozir namoz o‘qiyapti.")
     else:
-        room_status = update.message.from_user.first_name  # Namoz o'qiyotgan kishining ismi
-        room_occupants[update.message.from_user.id] = datetime.now()  # Kirish vaqti
-        await update.message.reply_text(f"Siz xonaga kirdingiz. Hozirda {room_status} namoz o'qiydi.")
+        user_id = update.message.from_user.id
+        user_name = update.message.from_user.first_name
         
-        # 10 daqiqada bir foydalanuvchiga chiqish haqida eslatma yuborish
-        context.job_queue.run_repeating(check_exit, interval=600, first=600, context=update.message.from_user.id)
+        room_status = user_name  # Xonadagi shaxs ismi
+        room_occupants[user_id] = datetime.now()  # Kirish vaqti
+
+        await update.message.reply_text(f"Siz xonaga kirdingiz. Hozirda {user_name} namoz o‘qiydi.")
+        
+        # 10 daqiqadan keyin eslatma berish uchun job qo‘shish
+        context.job_queue.run_once(check_exit, when=600, chat_id=user_id, name=str(user_id))
 
 # Xonadan chiqish
 async def exit(update: Update, context: CallbackContext) -> None:
     global room_status, room_occupants
-    
-    if room_status == update.message.from_user.first_name:
-        room_status = None  # Xonani bo'shatish
-        room_occupants.pop(update.message.from_user.id, None)  # Foydalanuvchini olib tashlash
-        await update.message.reply_text(f"Siz xonadan chiqdingiz.")
+
+    user_id = update.message.from_user.id
+    user_name = update.message.from_user.first_name
+
+    if room_status == user_name:
+        room_status = None  # Xonani bo‘shatish
+        room_occupants.pop(user_id, None)  # Foydalanuvchini o‘chirish
+
+        # Agar eslatma uchun job mavjud bo‘lsa, uni o‘chirish
+        for job in update.message.bot.job_queue.jobs():
+            if job.name == str(user_id):
+                job.schedule_removal()
+
+        await update.message.reply_text("Siz xonadan chiqdingiz.")
     else:
-        await update.message.reply_text("Siz bu xonada namoz o'qiyotgan emassiz!")
+        await update.message.reply_text("Siz bu xonada namoz o‘qiyotgan emassiz!")
 
 # Xonadan chiqish haqida eslatma
 async def check_exit(context: CallbackContext) -> None:
-    user_id = context.job.context
-    
-    # Foydalanuvchi mavjudligini tekshirish
-    if user_id in room_occupants:
-        # Foydalanuvchi nomini olish
-        user_name = await context.bot.get_chat(user_id).first_name
-        # Eslatma yuborish
-        await context.bot.send_message(user_id, f"{user_name}, Xonadan chiqdingizmi? Agar chiqqan bo'lsangiz, /exit ni unutmang.")
+    job = context.job
+    user_id = job.chat_id
+    await context.bot.send_message(user_id, "Xonadan chiqdingizmi? Agar chiqqan bo‘lsangiz, /exit ni unutmang.")
 
 def main():
     # Tokenni BotFather'dan olingan token bilan almashtiring
