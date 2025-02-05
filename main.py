@@ -35,12 +35,14 @@ async def exit(update: Update, context: CallbackContext) -> None:
     if room_status == update.message.from_user.first_name:
         room_status = None  # Xonani bo'shatish
         await update.message.reply_text(f"Siz xonadan chiqdingiz.")
+    elif room_status is None:
+        await update.message.reply_text("Xona allaqachon bo'sh.")
     else:
         await update.message.reply_text("Siz bu xonada namoz o'qiyotgan emassiz!")
 
 def main():
     # Tokenni BotFather'dan olingan token bilan almashtiring
-    application = Application.builder().token("8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k").build()
+    application = Application.builder().token("YOUR_BOT_TOKEN").build()
 
     # Komandalar
     application.add_handler(CommandHandler("start", start))
