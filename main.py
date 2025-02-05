@@ -42,7 +42,7 @@ async def exit(update: Update, context: CallbackContext) -> None:
 
 def main():
     # Tokenni BotFather'dan olingan token bilan almashtiring
-    application = Application.builder().token("YOUR_BOT_TOKEN").build()
+    application = Application.builder().token("8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k").build()
 
     # Komandalar
     application.add_handler(CommandHandler("start", start))
