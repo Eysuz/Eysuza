@@ -1,8 +1,9 @@
+import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext
 
 # Xona holati
-room_status = None  # Xona bo'sh, agar kimdir kirsa, ularning ismi bo'ladi
+room_status = None
 
 # Botni boshlash
 async def start(update: Update, context: CallbackContext) -> None:
@@ -25,7 +26,7 @@ async def enter(update: Update, context: CallbackContext) -> None:
     if room_status:
         await update.message.reply_text(f"Xona band. {room_status} hozir namoz o'qiyapti.")
     else:
-        room_status = update.message.from_user.first_name  # Namoz o'qiyotgan kishining ismi
+        room_status = update.message.from_user.first_name
         await update.message.reply_text(f"Siz xonaga kirdingiz. Hozirda {room_status} namoz o'qiydi.")
 
 # Xonadan chiqish
@@ -33,7 +34,7 @@ async def exit(update: Update, context: CallbackContext) -> None:
     global room_status
     
     if room_status == update.message.from_user.first_name:
-        room_status = None  # Xonani bo'shatish
+        room_status = None
         await update.message.reply_text(f"Siz xonadan chiqdingiz.")
     elif room_status is None:
         await update.message.reply_text("Xona allaqachon bo'sh.")
@@ -42,7 +43,7 @@ async def exit(update: Update, context: CallbackContext) -> None:
 
 def main():
     # Tokenni BotFather'dan olingan token bilan almashtiring
-    application = Application.builder().token("8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k").build()
+    application = Application.builder().token("YOUR_TOKEN_HERE").build()
 
     # Komandalar
     application.add_handler(CommandHandler("start", start))
@@ -50,8 +51,12 @@ def main():
     application.add_handler(CommandHandler("enter", enter))
     application.add_handler(CommandHandler("exit", exit))
 
-    # Botni ishga tushirish
-    application.run_polling()
+    # Webhook URL va port
+    port = int(os.environ.get('PORT', 8443))
+    application.run_webhook(listen="0.0.0.0",
+                            port=port,
+                            url_path="8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k",
+                            webhook_url="https://namoz-xona-bandligi.onrender.com/8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k")
 
 if __name__ == '__main__':
     main()
