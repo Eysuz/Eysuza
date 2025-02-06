@@ -1,8 +1,10 @@
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackContext
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackContext, JobQueue
+from datetime import datetime, timedelta
 
-# Xona holati
+# Xona holati va foydalanuvchilar ro'yxati
 room_status = None
+user_jobs = {}
 
 # Botni boshlash
 async def start(update: Update, context: CallbackContext) -> None:
@@ -29,6 +31,10 @@ async def enter(update: Update, context: CallbackContext) -> None:
     else:
         room_status = update.message.from_user.first_name
         await update.message.reply_text(f"Siz xonaga kirdingiz. Hozirda {room_status} namoz o'qiydi.")
+        
+        # 10 minutdan keyin foydalanuvchini eslatish
+        job = context.job_queue.run_once(send_exit_reminder, timedelta(minutes=1), context=update.message.from_user.id)
+        user_jobs[update.message.from_user.id] = job
 
 # Xonadan chiqish
 async def exit(update: Update, context: CallbackContext) -> None:
@@ -36,11 +42,20 @@ async def exit(update: Update, context: CallbackContext) -> None:
     
     if room_status == update.message.from_user.first_name:
         room_status = None
+        # Agar foydalanuvchi xonadan chiqsa, eslatmani bekor qilish
+        if update.message.from_user.id in user_jobs:
+            user_jobs[update.message.from_user.id].schedule_removal()
+            del user_jobs[update.message.from_user.id]
         await update.message.reply_text("Siz xonadan chiqdingiz.")
     elif room_status is None:
         await update.message.reply_text("Xona allaqachon bo'sh.")
     else:
         await update.message.reply_text("Siz bu xonada namoz o'qiyotgan emassiz!")
+
+# Foydalanuvchiga eslatma yuborish (10 minutdan so'ng)
+async def send_exit_reminder(context: CallbackContext) -> None:
+    user_id = context.job.context
+    await context.bot.send_message(user_id, "Xonadan chiqdingizmi? /exit ni unutmang!")
 
 def main():
     application = ApplicationBuilder().token("8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k").build()
