@@ -63,7 +63,8 @@ async def reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 def main():
     # Tokenni muhit o'zgaruvchisi orqali olish
-    token = os.getenv("8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k")
+    token = "8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k"
+
     
     application = Application.builder().token(token).build()
 
