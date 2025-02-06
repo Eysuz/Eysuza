@@ -3,8 +3,8 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes, JobQueue
 
 # Xona holati
-room_status = {}
-reminder_jobs = {}
+room_status = {}  # room_status chat_id asosida alohida saqlanadi
+reminder_jobs = {}  # reminder_jobs ham chat_id asosida
 
 # Botni boshlash
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -65,7 +65,7 @@ def main():
     # Tokenni muhit o'zgaruvchisi orqali olish
     token = os.getenv("8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k")
     
-    application = Application.builder().token("8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k").build()
+    application = Application.builder().token(token).build()
 
     # Komandalar
     application.add_handler(CommandHandler("start", start))
@@ -78,8 +78,8 @@ def main():
     application.run_webhook(
         listen="0.0.0.0",
         port=port,
-        url_path="8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k",
-        webhook_url="https://namoz-xona-bandligi.onrender.com/8009301844:AAG9boXMfRWVZbbN7L6O32M_zq5mWmjBC8k"
+        url_path=token,
+        webhook_url=f"https://namoz-xona-bandligi.onrender.com/{token}"
     )
 
 if __name__ == '__main__':
